@@ -1,0 +1,19 @@
+{
+  "name": "testparser",
+  "version": "1.0.0",
+  "description": "My test parser",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node main.js && echo \"Hello World!\""
+  },
+  "keywords": [
+    "parser"
+  ],
+  "author": "Pinsky",
+  "license": "ISC",
+  "dependencies": {
+    "node.js": "0.0.1-security",
+    "express": "^4.17.1"
+  }
+}
