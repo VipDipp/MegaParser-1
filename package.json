@@ -10,7 +10,7 @@
   "keywords": [
     "parser"
   ],
-  "author": "Pinsky",
+  "author": "PinskyandKuharuk",
   "license": "ISC",
   "dependencies": {
     "node.js": "0.0.1-security",
