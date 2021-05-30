@@ -1,11 +1,17 @@
+const http = require('http');
+const XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+const fs = require('fs');
+const DOMParser = require("jsdom");
+const heroDefaults = require('./Hero.interface.js');
 
-var resp = new Buffer('');
-var isResponded = false;
+const port = '5050'
+const host = '127.0.0.1'
 
 var options = {
-    protocol: 'https:',
+    protocol: 'https://',
     method: 'GET',
-    host: 'dota2.fandom.com/ru/wiki/' + encodeURIComponent('Герои'),
+    website: 'dota2.fandom.com',
+    host: encodeURI('dota2.fandom.com/ru/wiki/Герои'),
     path: '/',
     //This is the only line that is new. `headers` is an object with the headers to request
     headers: {
@@ -18,38 +24,93 @@ var options = {
     }
 };
 
-var request = https.request(options,(res) => {
-        res.on('data', (data) => {
-          console.log('data:', data);
-          resp = Buffer.concat([resp, data]);
-        });
-        res.on('end', () => isResponded = true);
-});
+var parseRequest = new XMLHttpRequest();
+var response = null;
+var parsedDocument = null;
+var heroes = [];
 
-request.end();
+var setRequestHeaders = (req) => {
+    req.setRequestHeader("User-Agent", options.headers["User-Agent"]);
+    req.setRequestHeader("Accept", options.headers.Accept);
+    req.setRequestHeader("Accept-Language", options.headers["Accept-Language"]);
+}
+
+function parsePage() {
+    parseRequest.open('GET', options.protocol + options.host);
+    setRequestHeaders(parseRequest);
+    parseRequest.onreadystatechange = function () {
+        if(parseRequest.readyState === parseRequest.DONE) {
+            response = parseRequest.responseText;
+            parsedDocument = (new DOMParser.JSDOM(response));
+        }
+    }
+    parseRequest.send();
+    return;
+}
+async function getHeroesLinks(doc) {
+    if(!doc) return;
+    let heroLinks = doc.window.document.querySelectorAll('table td div a');
+    let resultArray = [];
+    let currentAttrib = 0;
+    let prevName = '';
+    heroLinks.forEach( el => {
+        let link = el.attributes['href'].value;
+        let name = (link.split('/')[3]).replace(/_/g, ' ');
+        if (name < prevName) {
+            currentAttrib += 1;
+        }
+        resultArray.push({
+            name,
+            link,
+            primaryAttribute: heroDefaults.AttributesArr[currentAttrib],
+        });
+        prevName = name;
+    });
+    return resultArray;
+}
+
+function getHeroPage(hero, link) {
+    let req = new XMLHttpRequest();
+    req.open('GET', options.protocol + options.website + link);
+    setRequestHeaders(req);
+    req.onreadystatechange = function () {
+        if(req.readyState === req.DONE) {
+            hero.page = (new DOMParser.JSDOM(req.responseText));
+            setBasicHeroAttributes(hero);
+        }
+    }
+    req.send();
+}
+
+function setBasicHeroAttributes(hero) {
+    // console.log(hero)
+    let page = hero.page.window.document;
+    hero.img = page.querySelector('a.image img').attributes['src'].value;
+    console.log(hero);
+}
+
+parsePage();
+parseRequest.onloadend = async () => {
+    heroes = await getHeroesLinks(parsedDocument);
+    heroes.forEach(hero => {
+        getHeroPage(hero, hero.link);
+    });
+};
+
 
 const requestListener = function (req, res) {
-    // req.method (GET, POST, PUT, DELETE)
-    // req.url
-    // response.setHeader('Content-Type', 'application/json'); // Response headers
-    // response.write() // Body of response
-    if(isResponded){
-        res.setHeader('Content-Type', 'text/html');
-        fs.readFile('./pages/index.html', ((err, data) => {
-            if(err){
-                res.writeHead(500);
-                res.write('We didn`t find the page you`re looking for');
-                res.end()
-                return;
-            }
-            res.writeHead(200, {'content-type': 'text/html charset=UTF-8'});
-            res.end(data, 'utf-8');
-        }))
-        // res.end(resp.toString('utf-8'));
-        return;
-    }
-    res.writeHead(500);
-    res.end('Not yet');
+
+    res.setHeader('Content-Type', 'text/html');
+    fs.readFile('./pages/index.html', ((err, data) => {
+        if(err){
+            res.writeHead(500);
+            res.write('We didn`t find the page you`re looking for');
+            res.end()
+            return;
+        }
+        res.writeHead(200, {'content-type': 'text/html charset=UTF-8'});
+        res.end(data, 'utf-8');
+    }))
 }
 
 // TODO: GET '/api/parse' + params
@@ -67,15 +128,14 @@ server.listen(port);
 
 console.log(`http://${host}:${port}/`)
 
-// TODO Parse https://dota2.fandom.com/ru/wiki/Герои to string
-// TODO Make HTMLDocument based on the string
-// TODO `table td div a` => linksToHero
-// TODO navigate to linksToHero and get `table.infobox`
-// TODO get 8 divs with attributes from `table.infobox tr:first-child div` {
+// Parse https://dota2.fandom.com/ru/wiki/Герои to string
+// Make HTMLDocument based on the string
+// `table td div a` => linksToHero
+// navigate to linksToHero and get `table.infobox`
+// get 8 divs with attributes from `table.infobox tr:first-child div` {
 //  0: a.image,
 //  2-4: divs with attributes(one of them - #primaryAttribute),
-//  5-7: values of start attributes and ' + n' grow
+// TODO 5-7: values of start attributes and ' + n' grow
 // }
 // TODO Then get table with characteristics from `table.infobox tr:nth-child(2) table tr` get only 0, 2, 5 columns
 // TODO Get info from `table.infobox tr:nth-child(3) table`
-//
