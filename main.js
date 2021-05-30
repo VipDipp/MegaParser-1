@@ -135,7 +135,7 @@ console.log(`http://${host}:${port}/`)
 // get 8 divs with attributes from `table.infobox tr:first-child div` {
 //  0: a.image,
 //  2-4: divs with attributes(one of them - #primaryAttribute),
-// TODO 5-7: values of start attributes and ' + n' grow
+
 // }
 // TODO Then get table with characteristics from `table.infobox tr:nth-child(2) table tr` get only 0, 2, 5 columns
 // TODO Get info from `table.infobox tr:nth-child(3) table`
