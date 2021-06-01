@@ -7,7 +7,7 @@ const heroDefaults = require('./Hero.interface.js');
 const port = '5050'
 const host = '127.0.0.1'
 
-var options = {
+let options = {
     protocol: 'https://',
     method: 'GET',
     website: 'dota2.fandom.com',
@@ -24,12 +24,12 @@ var options = {
     }
 };
 
-var parseRequest = new XMLHttpRequest();
-var response = null;
-var parsedDocument = null;
-var heroes = [];
+let parseRequest = new XMLHttpRequest();
+let response = null;
+let parsedDocument = null;
+let heroes = [];
 
-var setRequestHeaders = (req) => {
+let setRequestHeaders = (req) => {
     req.setRequestHeader("User-Agent", options.headers["User-Agent"]);
     req.setRequestHeader("Accept", options.headers.Accept);
     req.setRequestHeader("Accept-Language", options.headers["Accept-Language"]);
