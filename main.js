@@ -83,9 +83,28 @@ function getHeroPage(hero, link) {
 }
 
 function setBasicHeroAttributes(hero) {
-    // console.log(hero)
     let page = hero.page.window.document;
     hero.img = page.querySelector('a.image img').attributes['src'].value;
+    hero.attributes = [] // [ { start: 25, grow: 2 }, {...}, {}]
+    let attributesDivs = page.querySelectorAll('table.infobox tr:first-child div');
+    console.log(attributesDivs);
+    for (let i = 5; i <= 7; i++ ) {
+        let attrString = attributesDivs[i].textContent.split(' + ');
+        hero.attributes.push({ start: +attrString[0], grow: +(attrString[1].replace(',', '.')) });
+    }
+    hero.firstLvlStats = [];
+    hero.lastLvlStats = [];
+    hero.defaultStats = [];
+    let stats = page.querySelectorAll('table.infobox tr:nth-child(2) table tr');
+    for (let i = 1; i < stats.length; i++) {
+        let trStats = stats[i].querySelectorAll('td');
+        hero.firstLvlStats.push(trStats[1].textContent.trim());
+        hero.lastLvlStats.push(trStats[4].textContent.trim());
+    }
+
+    let defaultStats = page.querySelectorAll('table.infobox tr:nth-child(3) table tbody tr td');
+    defaultStats.forEach(el => hero.defaultStats.push(el.textContent.trim()));
+
     console.log(hero);
 }
 
@@ -135,7 +154,11 @@ console.log(`http://${host}:${port}/`)
 // get 8 divs with attributes from `table.infobox tr:first-child div` {
 //  0: a.image,
 //  2-4: divs with attributes(one of them - #primaryAttribute),
-
+//  5-7: values of start attributes and ' + n' grow
 // }
-// TODO Then get table with characteristics from `table.infobox tr:nth-child(2) table tr` get only 0, 2, 5 columns
-// TODO Get info from `table.infobox tr:nth-child(3) table`
+// Then get table with characteristics from `table.infobox tr:nth-child(2) table tr` get only 0, 2, 5 columns
+// Get info from `table.infobox tr:nth-child(3) table`
+
+
+
+// TODO Free memory with hero pages
