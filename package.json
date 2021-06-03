@@ -4,16 +4,25 @@
   "description": "My test parser",
   "main": "main.js",
   "scripts": {
+    "lint": "eslint . --fix && prettier --write \"/*.js\" \"/*.json\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node main.js && echo \"Hello World!\""
   },
   "keywords": [
     "parser"
   ],
-  "author": "PinskyandKuharuk",
+  "author": "PinskyKuharuk",
   "license": "ISC",
   "dependencies": {
-    "node.js": "0.0.1-security",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "node.js": "0.0.1-security"
+  },
+  "devDependencies": {
+    "eslint": "^7.27.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-prettier": "^8.3.0",
+    "jsdom": "^16.6.0",
+    "prettier": "2.3.0",
+    "xmlhttprequest": "^1.8.0"
   }
 }
