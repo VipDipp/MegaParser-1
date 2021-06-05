@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>P&KWiki</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <link rel="favicon" href="favicon.png">
+</head>
+<body>
+    <style>
+        *{
+	margin: 0;
+	padding: 0;
+	box-sizing: content-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+html,body {
+    min-height: 100vh;    
+}
+
+body {
+    background: rgb(10,10,17);
+    background: linear-gradient(180deg, rgba(10,10,17,1) 0%, rgba(65,67,68,1) 100%);
+}
+
+.nav-items .nav-link {
+  position: relative;
+  margin-right: 1.5em;
+}
+
+.nav-items .nav-link:hover::after {
+  content: '';
+  width: 80%;
+  height: 1px;
+  position: absolute;
+  left: 10%;
+  bottom: 0;
+  border-radius: 1px;
+  opacity: 0.5;
+  transform: scale(.3, 3);
+  background-color: white;
+  animation: animate 0.7s 0.1s ease-in-out forwards;
+}
+
+.content {
+    height: auto;
+    min-height: 100vh;
+}
+.content header {
+    min-height: 350px;
+}
+
+.hero-img {
+    width: 45%;
+    margin-bottom: .5em;
+}
+
+.hero-img img {
+    width: 100%;
+    border-radius: .5em;
+}
+
+.spacer {
+    min-height: 5em;
+}
+
+@keyframes animate {
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+    </style>
+    <style>
+    @media screen and (max-width: 768px) {
+
+  /* Main page */
+    .nav-items .nav-link {
+        margin-right: 0;
+    }
+    .nav-items .nav-link:hover::after {
+        width: 30%;
+        left: 35%;
+    }
+}</style>
+	<nav class="navbar navbar-expand-md navbar-dark bg-dark bg-gradient sticky-top mb-5" id="navbar">
+        <div class="container-fluid pt-1"><a class="navbar-brand fs-4 pt-0 ms-5" href="#">DotaWiki</a><button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsingContent" aria-controls="collapsingContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse align-middle ms-md-5" id="collapsingContent">
+                <div class="container-fluid">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0 nav-items">
+                        <li class="nav-item text-center"><a class="nav-link active" href="#">Початок</a></li>
+                        <li class="nav-item text-center"><a class="nav-link" href="#heroesTable">Таблиця героїв</a></li>
+                        <li class="nav-item text-center"><a class="nav-link" href="#footer">Про нас</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="container-fluid content w-auto h-auto px-4 pt-5 mt-5 ">
+        <header class="w-auto h-100 pt-5 mt-5 mb-5 pb-5">
+            <div class="container-fluid text-center text-light mb-5 mt-5 pt-5 pb-5">
+                <h1 class="display-4 fw-bold">Найкращий парсер героїв з Dota 2</h1>
+                <div class="col-lg-6 mx-auto">
+                    <p class="lead mb-3">
+                        Всі дані ми парсимо з сайту
+                        <a href="https://dota2.fandom.com/ru/wiki/%D0%93%D0%B5%D1%80%D0%BE%D0%B8" class="text-decoration-none">
+                            www.dota2.fandom.com/ru
+                        </a>
+                    </p>
+                    <div class="d-flex justify-content-sm-center mb-4">
+                        <button type="button" class="btn btn-dark btn-lg me-sm-3">
+                            <a href="#heroesTable" class="text-decoration-none text-light">Перейти до таблиці</a>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="spacer"></div>
+        <% if(heroes) {%>
+        <div id="heroesTable" class="container-fluid mt-5 pt-5">
+            <div class="row justify-content-md-center mt-5 pt-5 w-100">
+                <div class="col-lg-3 text-center hover-shadow">
+                    <div class="head-attribute strength bg-danger rounded p-2 mb-2">
+                        Сила
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-around">
+                        <% heroes.forEach(function(hero){ %>
+                        <% if(hero.primaryAttribute === 'Сила') {%>
+                            <div class="hero-img shadow">
+                                <a href="<%-`/hero/${hero.name.replace(/\W/g, '_')}`%>">
+                                    <img src="<%= hero.img %>" referrerpolicy="no-referrer" alt="<%= hero.name %>">
+                                </a>
+                            </div>
+                        <%}});%>
+                    </div>
+                </div>
+                <div class="col-lg-3 text-center hover-shadow">
+                    <div class="head-attribute agility bg-success rounded p-2 mb-2">
+                        Ловкость
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-around">
+                        <% heroes.forEach(function(hero){ %>
+                            <% if(hero.primaryAttribute === 'Ловкость') {%>
+                                <div class="hero-img shadow">
+                                    <a href="<%-`/hero/${hero.name.replace(/\W/g, '_')}`%>">
+                                        <img src="<%= hero.img %>" referrerpolicy="no-referrer" alt="<%= hero.name %>">
+                                    </a>
+                                </div>
+                        <%}});%>
+                    </div>
+                </div>
+                <div class="col-lg-3 text-center hover-shadow">
+                    <div class="head-attribute intelligence bg-primary rounded p-2 mb-2">
+                        Интеллект
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-around">
+                        <% heroes.forEach(function(hero){ %>
+                            <% if(hero.primaryAttribute === 'Интеллект') {%>
+                                <div class="hero-img shadow">
+                                    <a href="<%-`/hero/${hero.name.replace(/\W/g, '_')}`%>">
+                                        <img src="<%= hero.img %>" referrerpolicy="no-referrer" alt="<%= hero.name %>">
+                                    </a>
+                                </div>
+                        <%}});%>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <%}%>
+        <div class="spacer"></div>
+    </div>
+    <footer id="footer" class="text-center text-lg-start text-muted text-light footer">
+            <p class="mt-5 mb-5 text-center">
+                Курсова робота <b><i>Пінського Михайла</i></b> та <b><i>Кухарука Олександра</i></b>
+            </p>
+            <p class="text-center fw-bold">
+                &copy; Київ 2021
+            </p>
+        </footer>
+</body>
+</html>
