@@ -1,4 +1,4 @@
 module.exports = {
-    AttributesArr: ['Сила', 'Ловкость', 'Интеллект'],
+  AttributesArr: ['Сила', 'Ловкость', 'Интеллект'],
 
-}
+};

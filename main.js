@@ -1,8 +1,11 @@
+
 const http = require('http');
 const XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
 const fs = require('fs');
 const DOMParser = require('jsdom');
 const heroDefaults = require('./Hero.interface.js');
+const ejs = require('ejs');
+const path = require('path');
 
 const port = '5050';
 const host = '127.0.0.1';
@@ -11,15 +14,16 @@ const options = {
   protocol: 'https://',
   method: 'GET',
   website: 'dota2.fandom.com',
-  host: encodeURI('dota2.fandom.com/ru/wiki/Heroes'),
+  host: encodeURI('dota2.fandom.com/ru/wiki/Герои'),
   path: '/',
-  // This is the only line that is new. `headers` is an object with the headers to request
   headers: {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) ' +
+        'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+        'Chrome/39.0.2171.95 Safari/537.36',
     'Accept': '*/*',
     'Accept-Encoding': 'null',
     'Connection': 'keep-alive',
-    'Host': encodeURIComponent('dota2.fandom.com/ru/wiki/Heroes'),
+    'Host': encodeURIComponent('dota2.fandom.com/ru/wiki/Герои'),
     'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7,uk;q=0.6,la;q=0.5'
   }
 };
@@ -34,9 +38,6 @@ const setRequestHeaders = req => {
   req.setRequestHeader('Accept', options.headers.Accept);
   req.setRequestHeader('Accept-Language', options.headers['Accept-Language']);
 };
-
-// Parsing page
-
 
 function parsePage() {
   parseRequest.open('GET', options.protocol + options.host);
@@ -78,10 +79,11 @@ function getHeroPage(hero, link) {
   req.onreadystatechange = function() {
     if (req.readyState === req.DONE) {
       hero.page = (new DOMParser.JSDOM(req.responseText));
-
-      setHeroTalents(hero);
       setBasicHeroAttributes(hero);
-
+      getAbilityimages(hero);
+      getAbilityDescriptions(hero);
+      setHeroTalents(hero);
+      recentChanges(hero);
 
     }
   };
@@ -90,9 +92,16 @@ function getHeroPage(hero, link) {
 
 function setBasicHeroAttributes(hero) {
   const page = hero.page.window.document;
-  hero.img = page.querySelector('a.image img').attributes['src'].value;
-  hero.attributes = []; // [ { start: 25, grow: 2 }, {...}, {}]
-  const attributesDivs = page.querySelectorAll('table.infobox tr:first-child div');
+  const imgs = page.querySelectorAll('a.image img');
+  for (let i = 0; i < imgs.length; i++) {
+    if (imgs[i].alt && !imgs[i].alt.includes('Grow')) {
+      hero.img = imgs[i].attributes['src'].value;
+      break;
+    }
+  }
+  hero.attributes = [];
+  const attributesPath = 'table.infobox tr:first-child div';
+  const attributesDivs = page.querySelectorAll(attributesPath);
   console.log(attributesDivs);
   for (let i = 5; i <= 7; i++) {
     const attrString = attributesDivs[i].textContent.split(' + ');
@@ -101,33 +110,68 @@ function setBasicHeroAttributes(hero) {
   hero.firstLvlStats = [];
   hero.lastLvlStats = [];
   hero.defaultStats = [];
-  const stats = page.querySelectorAll('table.infobox tr:nth-child(2) table tr');
+  const statsPath = 'table.infobox tr:nth-child(2) table tr';
+  const stats = page.querySelectorAll(statsPath);
   for (let i = 1; i < stats.length; i++) {
     const trStats = stats[i].querySelectorAll('td');
     hero.firstLvlStats.push(trStats[1].textContent.trim());
     hero.lastLvlStats.push(trStats[4].textContent.trim());
   }
-
-  const defaultStats = page.querySelectorAll('table.infobox tr:nth-child(3) table tbody tr td');
+  const defaultPath = 'table.infobox tr:nth-child(3) table tbody tr td';
+  const defaultStats = page.querySelectorAll(defaultPath);
   defaultStats.forEach(el => hero.defaultStats.push(el.textContent.trim()));
 
-  console.log(hero);
+
 }
+
+function getAbilityimages(hero) {
+  hero.abilityImgLinks = [];
+  const page = hero.page.window.document;
+  const path = 'div.ico_active > a > img, ' +
+      'div.ico_passive > a > img, ' +
+      'div.ico_autocast > a > img';
+  const skillImgs = page.querySelectorAll(path);
+  skillImgs.forEach(skillImg => {
+    const link = skillImg.attributes['src'].value;
+    hero.abilityImgLinks.push(link);
+  });
+}
+function getAbilityDescriptions(hero) {
+  hero.abilityDescriptions = [];
+  const page = hero.page.window.document;
+  const descriptionPath = 'div.ability-description > div:nth-child(2)';
+  const skillDescriptions = page.querySelectorAll(descriptionPath);
+  skillDescriptions.forEach(el =>
+    hero.abilityDescriptions.push(el.textContent)
+  );
+
+  hero.abilityTitles = [];
+  const titlesPath = 'div.ability-background > div > div:nth-child(1)';
+  const skillTitles = page.querySelectorAll(titlesPath);
+  skillTitles.forEach(title =>
+    hero.abilityTitles.push(title.textContent.split('Link▶')[0].trim())
+  );
+}
+
 
 function setHeroTalents(hero) {
   const page = hero.page.window.document;
   hero.talents = [];
-  let count = 18;
-  while (true) {
-    const talentsDivs = page.querySelectorAll(`div div:nth-child(${count}) table tbody tr`);
-    if (talentsDivs[0] !== undefined) if (talentsDivs[0].textContent.trim() === 'Таланты героя') break;
-    count++;
-  }
-  const talentsDivs = page.querySelectorAll(`div div:nth-child(${count}) table tbody tr`);
+  const talentsDivs = page.querySelectorAll('table.wikitable tbody tr');
   for (let i = 1; i < 5; i++) {
     const trTalents = talentsDivs[i].querySelectorAll('td');
     trTalents.forEach(el => hero.talents.push(el.textContent.trim()));
   }
+}
+
+function recentChanges(hero) {
+  const page = hero.page.window.document;
+  hero.recentChanges = [];
+  const path = 'div.updatetablebody div:nth-child(1) div#description';
+  const changes = page.querySelectorAll(path);
+  hero.recentChanges.push(changes[0].textContent.trim());
+  hero.page = null;
+  console.log(hero);
 }
 
 parsePage();
@@ -140,19 +184,55 @@ parseRequest.onloadend = async () => {
 
 
 const requestListener = function(req, res) {
+  if (!heroes.length) {
+    console.log('Server is loading or crashed');
+    return;
+  }
+  if (req.url === '/') {
+    res.setHeader('Content-Type', 'text/html');
+    fs.readFile(path.join(__dirname, 'pages/index.ejs'), 'utf-8', (err, data) => {
+      if (err) throw new Error();
+      const compiledPage = ejs.render(data, { heroes });
 
-  res.setHeader('Content-Type', 'text/html');
-  fs.readFile('./pages/index.html', ((err, data) => {
-    if (err) {
-      res.writeHead(500);
-      res.write('We didn`t find the page you`re looking for');
-      res.end();
-      return;
-    }
-    res.writeHead(200, { 'content-type': 'text/html charset=UTF-8' });
-    res.end(data, 'utf-8');
-  }));
+      res.setHeader('Status-Code', 200);
+      res.end(compiledPage);
+    });
+    return;
+  }
+  if (req.url.includes('hero')) {
+    res.setHeader('Content-Type', 'text/html');
+    fs.readFile(path.join(__dirname, 'pages/hero.ejs'), 'utf-8', (err, data) => {
+      if (err) throw new Error();
+      const name = (req.url.split('/')[2]).replace(/_/g, ' ');
+      const chosenHero = heroes.filter(el => el.name === name)[0];
+      const compiledPage = ejs.render(data, { hero: chosenHero });
+
+      res.setHeader('Status-Code', 200);
+      res.end(compiledPage);
+    });
+    return;
+  }
+  console.log(req.url);
+  if (req.url.includes('favicon')) {
+    console.log('HERE');
+    res.setHeader('Content-Type', 'image/png');
+    fs.readFile(path.join(__dirname, 'pages/favicon.png'), (err, data) => {
+      if (err) {
+        res.writeHead(400, { 'Content-type': 'text/html' });
+        console.log(err);
+        res.end('No such image');
+      } else {
+        // specify the content type in the response will be an image
+        console.log('image loaded!');
+        res.writeHead(200, { 'Content-type': 'image/png' });
+        res.end(data);
+      }
+    });
+  }
+
 };
+
+
 
 const server = http.createServer(requestListener);
 server.listen(port);
